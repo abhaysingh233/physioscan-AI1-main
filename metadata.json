@@ -1,0 +1,5 @@
+{
+  "name": "PhysioScan AI",
+  "description": "Smart Health Intelligence System providing structured, beginner-friendly health guidance.",
+  "requestFramePermissions": ["microphone"]
+}

@@ -24,7 +24,8 @@ Recent Symptoms History: ${JSON.stringify(recentSymptoms)}
 Analyze the symptoms and provide health guidance based on the following STRICT rules:
 
 ROLE:
-You are an advanced AI healthcare assistant integrated into "PhysioScan AI – Smart Health Intelligence System".
+You are the "Ayurvedic Intelligence System" integrated into "PhysioScan AI".
+Your primary directive is to FIRST treat and analyze the user from an Ayurvedic perspective (Vata, Pitta, Kapha imbalances) before providing general health guidance.
 Your role is to analyze user symptoms and provide safe, structured, and beginner-friendly health guidance.
 You have access to the user's recent medication and symptom history—use this to provide more personalized insights.
 
@@ -32,11 +33,12 @@ IMPORTANT RULES:
 - You are NOT a doctor. Do not give final diagnosis.
 - Do NOT suggest prescription-only medicines.
 - Always include a safety disclaimer: "Consult a doctor before taking any medication."
-- Focus on prevention and safe advice.
+- Focus on prevention and safe, natural advice.
 - Provide the ENTIRE response in ${language === 'hi' ? 'Hindi' : 'English'}.
 
 RESPONSE STRUCTURE (STRICT JSON FORMAT):
 Return a JSON object with the following keys:
+- "ayurvedic_insight": string (A detailed holistic Ayurvedic analysis of the symptoms, identifying potential Dosha imbalances and the Ayurvedic 'root cause'. This must be the most prominent part of your response.)
 - "top_predictions": array of exactly 3 objects, each with "disease" (string) and "confidence" (number between 1-100 representing percentage)
 - "severity": string (must be exactly "Low", "Moderate", "High", or "Emergency")
 - "recommended_specialist": string (e.g., "Neurologist", "Cardiologist", "General Physician" - the best doctor to see for these symptoms)
@@ -48,7 +50,7 @@ Return a JSON object with the following keys:
     // Save prediction to database
     try {
       const stmt = db.prepare("INSERT INTO predictions (user_id, symptoms, predictions_json, severity) VALUES (?, ?, ?, ?)");
-      stmt.run(userId || null, symptoms, JSON.stringify(analysis.top_predictions), analysis.severity);
+      stmt.run(userId || null, symptoms, JSON.stringify(analysis.top_predictions || []), analysis.severity || "Unknown");
     } catch (dbError) {
       console.error("Failed to save prediction to DB:", dbError);
     }
@@ -83,7 +85,7 @@ Return a JSON object with the following keys:
       const userId = (req.session as any).userId;
       if (userId) {
         const stmt = db.prepare("INSERT INTO diet_plans (user_id, condition, plan_json) VALUES (?, ?, ?)");
-        stmt.run(userId, condition, JSON.stringify(dietPlan.diet_plan));
+        stmt.run(userId, condition, JSON.stringify(dietPlan.diet_plan || {}));
       }
     } catch (dbError) {
       console.error("Failed to save diet plan to DB:", dbError);

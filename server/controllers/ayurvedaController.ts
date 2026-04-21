@@ -31,7 +31,16 @@ STRICT RULES:
 `;
 
     const result = await generateAIContent(prompt, true);
-    res.json(result);
+    
+    // Ensure structure is correct
+    const finalizedResult = {
+      treatments: result.treatments || [],
+      lifestyle_tips: result.lifestyle_tips || [],
+      dosha_impact: result.dosha_impact || "Analysis unavailable",
+      herbal_recommendations: result.herbal_recommendations || []
+    };
+
+    res.json(finalizedResult);
   } catch (error: any) {
     console.error("Error in Ayurvedic analysis:", error);
     res.status(500).json({ error: error.message || "Failed to analyze Ayurvedic wisdom" });

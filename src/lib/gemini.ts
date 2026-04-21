@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const getAIClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : null);
   if (!apiKey) {
     console.error("❌ API Key is missing or invalid!");
     throw new Error("API Key is not configured");
@@ -9,7 +9,7 @@ export const getAIClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export async function generateAIContent(prompt: string, isJson: boolean = false, model: string = "gemini-3-flash-preview", config?: any) {
+export async function generateAIContent(prompt: string, isJson: boolean = false, model: string = "gemini-2.0-flash", config?: any) {
   const ai = getAIClient();
   const response = await ai.models.generateContent({
     model,

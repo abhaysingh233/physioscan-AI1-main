@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Leaf, Search, Info, Activity, Wind, Flame, Droplets, BookOpen, Clock, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Leaf, Search, Info, Activity, Wind, Flame, Droplets, BookOpen, Clock, CheckCircle2, AlertCircle, Loader2, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '../context/LanguageContext';
@@ -25,6 +25,7 @@ export default function AyurvedicIntelligence() {
   const [result, setResult] = useState<AyurvedicResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<'treatments' | 'doshas' | 'herbs' | 'routine'>('treatments');
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,9 +42,26 @@ export default function AyurvedicIntelligence() {
         body: JSON.stringify({ query, language })
       });
 
-      if (!response.ok) throw new Error('Failed to fetch Ayurvedic intelligence');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch Ayurvedic intelligence');
+      }
       const data = await response.json();
-      setResult(data);
+      
+      const finalizedResult = {
+        treatments: data.treatments || [],
+        lifestyle_tips: data.lifestyle_tips || [],
+        dosha_impact: data.dosha_impact || "Analysis unavailable",
+        herbal_recommendations: data.herbal_recommendations || []
+      };
+      
+      setResult(finalizedResult);
+      setActiveCategory('treatments'); // Switch to treatments tab to see results
+      
+      // Scroll to results
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {
@@ -155,16 +173,39 @@ export default function AyurvedicIntelligence() {
         ))}
       </div>
 
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-[2rem] flex items-center gap-4 shadow-xl shadow-red-100/50"
+        >
+          <div className="bg-white p-3 rounded-2xl shadow-sm">
+            <AlertCircle className="w-6 h-6 text-red-500" />
+          </div>
+          <div>
+            <h4 className="font-bold text-red-900">Analysis Error</h4>
+            <p className="text-sm text-red-700/80 font-medium">{error}</p>
+          </div>
+          <button 
+            onClick={() => setError(null)}
+            className="ml-auto text-red-400 hover:text-red-600 transition-colors p-2"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </motion.div>
+      )}
+
       <AnimatePresence mode="wait">
         {activeCategory === 'treatments' && (
           <motion.div
+            ref={resultsRef}
             key="treatments"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="space-y-8"
+            className="space-y-8 scroll-mt-8"
           >
-            {result ? (
+            {result && result.treatments?.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div className="lg:col-span-8 space-y-6">
                   <div className="flex items-center gap-3 mb-2">
@@ -173,7 +214,7 @@ export default function AyurvedicIntelligence() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {result.treatments.map((treatment, idx) => (
+                    {result.treatments?.map((treatment, idx) => (
                       <motion.div
                         key={idx}
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -189,7 +230,7 @@ export default function AyurvedicIntelligence() {
                           <div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Benefits</p>
                             <div className="flex flex-wrap gap-2">
-                              {treatment.benefits.map((b, i) => (
+                              {treatment.benefits?.map((b, i) => (
                                 <span key={i} className="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-bold">
                                   {b}
                                 </span>
@@ -217,7 +258,7 @@ export default function AyurvedicIntelligence() {
                       Lifestyle & Dietary Wisdom
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {result.lifestyle_tips.map((tip, idx) => (
+                      {result.lifestyle_tips?.map((tip, idx) => (
                         <div key={idx} className="flex items-start gap-3 bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
                           <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -235,9 +276,9 @@ export default function AyurvedicIntelligence() {
                       <Activity className="w-5 h-5 text-blue-500" />
                       Dosha Analysis
                     </h4>
-                    <div className="prose prose-sm prose-emerald">
-                      <ReactMarkdown className="text-slate-600 leading-relaxed">
-                        {result.dosha_impact}
+                    <div className="prose prose-sm prose-emerald text-slate-600 leading-relaxed">
+                      <ReactMarkdown>
+                        {result.dosha_impact || ''}
                       </ReactMarkdown>
                     </div>
                   </div>
@@ -248,7 +289,7 @@ export default function AyurvedicIntelligence() {
                       Herbal Essence
                     </h4>
                     <div className="space-y-4">
-                      {result.herbal_recommendations.map((herb, idx) => (
+                      {result.herbal_recommendations?.map((herb, idx) => (
                         <div key={idx} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
                           <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
                           <span className="text-sm font-medium">{herb}</span>

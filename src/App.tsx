@@ -45,6 +45,7 @@ interface AnalysisResult {
   top_predictions: Prediction[];
   severity: 'Low' | 'Moderate' | 'High' | 'Emergency';
   ayurvedic_remedies: AyurvedicRemedy[];
+  ayurvedic_insight: string;
   precautions: string[];
   diet_plan: DietPlan;
   recommended_specialist: string;
@@ -57,7 +58,7 @@ function AppContent() {
   const { t, language, setLanguage } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [authChecking, setAuthChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('analysis');
+  const [activeTab, setActiveTab] = useState<Tab>('ayurveda');
   const [symptoms, setSymptoms] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
@@ -187,12 +188,15 @@ function AppContent() {
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
+              <Leaf className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">
-              PhysioScan<span className="text-blue-600">.edu</span>
-            </h1>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none">
+                PhysioScan<span className="text-emerald-600">.AI</span>
+              </h1>
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Ayurvedic Intelligence System</span>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
@@ -227,17 +231,6 @@ function AppContent() {
         {/* Tab Navigation */}
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
           <button
-            onClick={() => setActiveTab('analysis')}
-            className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'analysis'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200'
-            }`}
-          >
-            <Stethoscope className="w-4 h-4" />
-            {t('symptoms')}
-          </button>
-          <button
             onClick={() => setActiveTab('ayurveda')}
             className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'ayurveda'
@@ -247,6 +240,17 @@ function AppContent() {
           >
             <Leaf className="w-4 h-4" />
             Ayurveda
+          </button>
+          <button
+            onClick={() => setActiveTab('analysis')}
+            className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'analysis'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200'
+            }`}
+          >
+            <Stethoscope className="w-4 h-4" />
+            {t('symptoms')}
           </button>
           <button
             onClick={() => setActiveTab('breathing')}
@@ -491,6 +495,27 @@ function AppContent() {
                     </div>
                   </div>
 
+                  {result.ayurvedic_insight && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-8 text-white shadow-xl shadow-emerald-200/50 relative overflow-hidden"
+                    >
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
+                            <Leaf className="w-6 h-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold">Ayurvedic Intelligence Insight</h3>
+                        </div>
+                        <p className="text-emerald-50 leading-relaxed text-lg font-medium italic">
+                          "{result.ayurvedic_insight}"
+                        </p>
+                      </div>
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+                    </motion.div>
+                  )}
+
                   {result.recommended_specialist && (
                     <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
@@ -516,7 +541,7 @@ function AppContent() {
                       Ayurvedic Remedies & First Aid
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {result.ayurvedic_remedies.map((item, idx) => (
+                      {result.ayurvedic_remedies?.map((item, idx) => (
                         <div key={idx} className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100">
                           <div className="font-bold text-emerald-900 mb-1">{item.remedy}</div>
                           <div className="text-sm text-emerald-700 flex items-center gap-2">
@@ -533,7 +558,7 @@ function AppContent() {
                       Precautions & Care
                     </div>
                     <ul className="space-y-3">
-                      {result.precautions.map((precaution, idx) => (
+                      {result.precautions?.map((precaution, idx) => (
                         <li key={idx} className="flex items-start gap-3 text-slate-600">
                           <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 flex-shrink-0" />
                           <span className="leading-relaxed">{precaution}</span>
@@ -556,7 +581,7 @@ function AppContent() {
                             <CheckCircle className="w-4 h-4 text-emerald-500" /> Foods to Eat
                           </h4>
                           <ul className="space-y-2">
-                            {result.diet_plan.foods_to_eat.map((food, idx) => (
+                            {result.diet_plan.foods_to_eat?.map((food, idx) => (
                               <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
                                 <span>{food}</span>
@@ -571,7 +596,7 @@ function AppContent() {
                             <XCircle className="w-4 h-4 text-red-500" /> Foods to Avoid
                           </h4>
                           <ul className="space-y-2">
-                            {result.diet_plan.foods_to_avoid.map((food, idx) => (
+                            {result.diet_plan.foods_to_avoid?.map((food, idx) => (
                               <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0" />
                                 <span>{food}</span>
